@@ -1,0 +1,12 @@
+{
+ "config": {"audio": "mix.wav", "disclosure": "内容由 AI 数字人演绎", "brollTag": "AI 生成画面"},
+ "scenes": [
+  {"type": "host", "a": "@s01", "b": "@s01:有个", "depth": {"src": "cut/s01.webm", "lines": ["翻倍"], "at": "@s01:翻|-0.2"}},
+  {"type": "board", "a": "@s01:有个", "b": "@s01:end", "tag": "想一想", "title": "存一笔钱", "big": ["多久翻一倍？"], "pip": "rect-r"},
+  {"type": "big", "a": "@s02", "b": "@s02:end", "top": "72 法则", "bottom": "72 ÷ 年化", "bottomAt": "@s02:用", "pip": "rect-r"},
+  {"type": "calc", "a": "@s03", "b": "@s03:end", "tag": "年化 6%", "row": ["72", "÷ 6"], "rowAt": ["@s03:七十二", "@s03:除以"], "res": "≈ 12 年翻倍", "resAt": "@s03:等于", "pip": "rect-r"},
+  {"type": "bars", "a": "@s04", "b": "@s04:end", "title": "翻一倍要多少年", "bars": [["年化 6%", 12], ["年化 2%", 36]], "barsAt": ["@s04", "@s04:三十六"], "unit": "年", "highlight": 1, "pip": "rect-r"},
+  {"type": "broll", "a": "@s05", "b": "@s05:end", "clip": "B01", "chips": ["收益率：多 1–2 个点", "手续费：每年扣一点"], "chipsAt": "@s05:收益"},
+  {"type": "host", "a": "@s06", "b": "@s06:end", "lower": ["你的钱", "按什么速度在长？"]}
+ ]
+}

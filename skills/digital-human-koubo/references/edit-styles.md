@@ -8,7 +8,7 @@
 | C 发布解读 | templates/reference/launch-169 | src/Film.tsx | 新品发布、横屏 B 站 |
 | D 教程 | templates/reference/tutorial-169 | src/Tutorial.tsx | 保姆级教程、操作演示 |
 | E 多主播多语言 | templates/reference/multihost-169 | src/Tutorial.tsx（nar / clip / title / outro） | 能力展示、多场景、出海 |
-| A 小林式解说 | finance-explainer skill 的 templates/engine | src/Episode.tsx + episode.json | 财经 / 科技事件解说 |
+| A 小林式解说 | templates/lin-169（scripts/new_edit.sh lin-169） | src/Lin.tsx + src/scenes.json（lin_scenes.py 从 plan.json 生成）+ src/cues.json | 财经 / 科技事件解说（纯图表长片仍可用 finance-explainer 引擎） |
 
 ## 花字口播
 新片一律用 templates/huazi-916（edit.json 驱动），字段见 references/huazi.md。

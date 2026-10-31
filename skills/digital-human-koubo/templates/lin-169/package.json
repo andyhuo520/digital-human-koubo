@@ -1,0 +1,35 @@
+{
+  "name": "lin-169",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "remotion render"
+  },
+  "dependencies": {
+    "@react-three/fiber": "9.8.1",
+    "@react-three/postprocessing": "3.1.2",
+    "@remotion/cli": "4.0.408",
+    "@remotion/motion-blur": "4.0.408",
+    "@remotion/paths": "4.0.408",
+    "@remotion/three": "4.0.408",
+    "@remotion/transitions": "4.0.408",
+    "gsap": "3.15.0",
+    "lottie-web": "5.13.0",
+    "lucide-react": "1.48.0",
+    "motion-dom": "12.43.0",
+    "motion-utils": "12.39.0",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "remotion": "4.0.408",
+    "three": "0.176.0",
+    "d3-geo": "^3.1.1",
+    "topojson-client": "^3.1.0",
+    "world-atlas": "^2.0.2"
+  },
+  "devDependencies": {
+    "@types/react": "19.0.0",
+    "@types/three": "0.176.0",
+    "typescript": "5.8.2"
+  }
+}

@@ -23,7 +23,12 @@ if [ ! -f "$DST/public/sfx/pop.wav" ] || [ ! -f "$DST/public/music/bgm.mp3" ]; t
   [ -n "$PY" ] && "$PY" "$(dirname "$0")/make_assets.py" "$DST/public" || echo "⚠ 没找到装了 numpy 的 Python，音效没生成：python3 -m pip install numpy 后跑 python3 $(dirname "$0")/make_assets.py $DST/public"
 fi
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-if [ "$TPL" = "huazi-916" ]; then
+if [ "$TPL" = "lin-169" ]; then
+  echo "✓ $DST 已就绪（小林式）。放入 public/main.mp4（cut/joined.mp4）、public/broll/、public/stickers/、public/cut/*.webm；然后："
+  echo "  python3 $ROOT/scripts/lin_subs.py script.json --tl $DST/src/tl.json --out $DST/src/cues.json --disp disp.txt"
+  echo "  python3 $ROOT/scripts/lin_scenes.py plan.json --tl $DST/src/tl.json --out $DST/src/scenes.json --face   （plan 写法见 $DST/plan.example.json）"
+  echo "  python3 $ROOT/scripts/lin_sfx.py $DST/src/scenes.json --out audio && python3 $ROOT/scripts/lin_mix.py --voice cut/joined.mov --bgm 曲子 --sfx audio/sfx_bus.wav --out $DST/public/mix.wav"
+elif [ "$TPL" = "huazi-916" ]; then
   echo "✓ $DST 已就绪。放入 public/main.mp4、public/voice.wav、src/tl.json，改 src/edit.json，然后："
   echo "  python3 $ROOT/scripts/check_edit.py $DST/src"
 else

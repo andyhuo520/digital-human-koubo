@@ -9,7 +9,7 @@ description: 用固定的数字人形象（白背心数字人 / 用户本人数�
 
 ## 红线
 - 生成花用户的 Renoise credits：create_tasks 之前先报「段数 · 秒数 · 预估 credits · 余额」，等用户在对话里明确同意。先拍第 1 段给用户确认音色，再批量。重拍也要先报价。
-- 成片标「内容由 AI 数字人演绎」；场景、动物片段角上标「AI 生成」。
+- 成片标「内容由 AI 数字人演绎」；场景、动物片段、B-roll 角上标「AI 生成」。用户明确要去掉画面标注时照做，但要提醒：公开发布时在平台发布页勾选「AI 生成」声明。
 - 用户本人的形象（persona.json → other_hosts.me）只用在用户自己的片子里。
 - 「小林式」只学结构和剪辑手法：不用真实创作者的脸、声音、布景和原句。
 - 点名评价第三方产品的说法，要有出处或标「网友分析 / 个人体验」。展示素材只用用户自己的作品；带歌词字幕的片子不用。
@@ -34,7 +34,7 @@ description: 用固定的数字人形象（白背心数字人 / 用户本人数�
 
 | 风格 | 比例 | 时长 | 剪辑实现 |
 |---|---|---|---|
-| A 小林式解说 | 16:9 | 3–20 分钟 | finance-explainer skill 的引擎（episode.json 拍表） |
+| A 小林式解说 | 16:9 | 3–20 分钟 | `templates/lin-169`（plan.json → scenes.json 驱动：景深字 / 题板+主播小窗 / B-roll / 公式逐项长出 / 算例 / 图表，见 references/lin-style.md） |
 | B 网红花字口播 | 9:16 | 30–120 秒 | `templates/huazi-916`（edit.json 驱动，三档花字） |
 | C 发布解读 | 16:9 | 30–90 秒 | 参考实现 `templates/reference/launch-169` |
 | D 保姆级教程 | 16:9 | 3–8 分钟 | 参考实现 `templates/reference/tutorial-169` |
@@ -54,20 +54,34 @@ tasks.json 每 10 个一批 create_tasks → wait_tasks。要进场景（直播�
 download_results 拿链接 → 整理成 `urls.txt`（每行 `<taskId>.<ext> <url>`）→ `python3 scripts/rangedl.py`：每个文件 6 段 Range 并发、断点续传、下完 ffmpeg 解码校验。
 
 ### 5. 回听 + 抽帧 + 拼接
-`python3 scripts/assemble.py script.json ids.json --out 成片_完整版.mp4`（ids.json = {段 id: taskId}）：whisper 逐段转写比对文稿、只保留到说完后 0.25 秒、拼接、loudnorm -16。
+`python3 scripts/assemble.py script.json ids.json --out 成片_完整版.mp4`（ids.json = {段 id: taskId}）：whisper 逐段转写比对文稿、只保留到说完后 0.25 秒、拼接、loudnorm -16。剪辑用 `cut/joined.mov`：拼接前已把每段音频补齐到和画面等长，避免几十段拼下来声音累积落后口型；拼完会打印画面和声音的时长，两者必须一致。改过某段后用 `--rejoin` 只重新拼。
 - whisper `--prompt 原文` 会让个别段漏掉前半句，用中性提示「以下是普通话的句子。」。外语段按语言转写；日韩阿拉伯语不要加 `-ml 1`（会把多字节字符截断成乱码）。
 - **每段抽 4 帧看一眼**：Grok 横屏口播偶尔自己烧字幕（提示词写了也挡不住），有就重拍那段。
 - Grok 有时漏念开头的语气词：没影响意思就按实际口播改字幕，别为这个重拍。
-- **念错字（不是漏语气词）要当场修，不能交给用户去听**：先用中性提示和带原文提示各转写一次，排除 whisper 误听。确认真念错了，优先 0 积分修：拿同一角色 15–20 秒干声（拼几段 cut/*.wav）当参照，用 MiMo `mimo-v2.5-tts-voiceclone` 只重配错的那几个字，响度对齐后在停顿处接缝替换（不要加速、不要加混响，否则字会糊），替换后再转写确认。口型差太多时再报价重拍那一段。
+- **念错字（不是漏语气词）要当场修，不能交给用户去听**：
+  - **查**：`python3 scripts/misread_check.py script.json`，按停顿切句、不带原文逐句转写，列出可疑字。**不能拿带原文提示的转写判断读音**：它会把念错的字纠正回去（「通胀」念成 tōng zhèng，带原文照样判全对）。同音字会误报，可疑处听一下确认。
+  - **修（0 积分、保口型）**：`python3 scripts/patch_words.py script.json patch.json --ref <2–3 段干净原声> --synth-only` → 填克隆句时间 → 再跑 → `assemble.py --rejoin`。只把错的那一句换成 MiMo 克隆音，长度拉到和原句一样，切在停顿上。换整句比只换两个字自然。
+  - **别整片换音色**：口型跟的是原声，整片换掉会到处对不上；也别先提 OmniHuman 重做口型（全片约 5,000 积分）。
+  - 口型实在差太多，再报价重拍那一段。
 - 开头第一个字最容易被吞或念歪（例：「一个知识点」→「几个知识地点」），写稿时第一段开头别放关键名词，或者先垫一个短词。
 
 ### 6. 对齐 + 剪辑
 `python3 scripts/align.py script.json --out <工程>/src/tl.json` 出逐字时间轴，然后按 brief.json 的风格剪：
 - **B 花字口播**：`bash scripts/new_edit.sh huazi-916 <工程>` → 写 `src/edit.json`（关键词、表情、卡片、作品展示、号召，字段见 references/huazi.md）→ `python3 scripts/check_edit.py <工程>/src` → 抽帧 → 渲染。
-- **A 小林式**：`bash ~/.claude/skills/finance-explainer/scripts/setup_engine.sh <工程>`，按那边的拍表和画面语法做；数字人口播片段放进 host.json。
+- **A 小林式**：`bash scripts/new_edit.sh lin-169 <工程>`，按 `references/lin-style.md` 做：
+  1. `lin_subs.py` 出字幕（数字用 disp.txt 显示成阿拉伯数字）。
+  2. 写 `plan.json`，示例见 `templates/lin-169/plan.example.json`，时间写「@s07:两千」。
+  3. 跑 `lin_scenes.py --face` 生成 scenes.json，并自动量主播脸的位置给小窗用。
+  4. B-roll 用 Wan 3.0 生成（先报价，每段约 60 积分），景深字段跑 `cutout_video.py` 抠像。
+  5. 渲染。每个场景抽开头和中点两帧检查，重点看小窗有没有挡住内容、有没有空板。
+  - 只做纯图表、不出镜的财经长片，仍可用 finance-explainer 的引擎。
 - **C / D / E**：`bash scripts/new_edit.sh reference/<目录> <工程>`，换 tl.json，按段重写 Scene（templates/reference/README.md）。
 - **包装（每种风格都做）**：按 `references/packaging-presets.json` 里这个风格的默认包装排——开场 30 秒按 open 顺序、正文保证 stimulus_every_s 秒内有一个新视觉事件、讲到 per_beat 里那类内容就用对应组件、recurring 全片挂着。组件写进 `pack` 数组（字段见 references/packaging.md），手法依据见 references/packaging-playbook.md。用户点名要的手法（「加地图」「开场加预告」「加弹幕」「换成 MrBeast 那种」）在默认基础上加减。用户问「有哪些包装」先发 `assets/packaging/图鉴.jpg`。景深字（文字在人身后）要先跑 `scripts/cutout_video.py` 抠像，见 references/packaging.md。
 - 声音：数字人视频轨一定 `muted`，人声单独铺一条；多段 Grok 原声用 `python3 scripts/voicefx/unify.py <输出目录> <片段…>` 统一频谱 + 同一个小房间混响（复用旧段时加 `--ref 旧片段目录`，场景/动物片段加 `--scene`）。BGM 压在人声下约 20 dB。
+  - **音效**：`python3 scripts/lin_sfx.py <工程>/src/scenes.json --out audio` 按场景自动排音效（earshot 音效库：切画面 whoosh、景深字和结果「碰」、卡片 pop、结论 bell）。音效要高出人声和音乐 8–10 dB，用 `earshot timeline --cues` 复查。
+  - **BGM**：用 `earshot rank` 从曲库挑。
+  - **混音和导出**：`python3 scripts/lin_mix.py` 做人声链 + BGM 循环避让人声 + 音效，出 −16 LUFS 的 mix.wav；加 `--speed 1.1` 出 1.1 倍成片（BGM 保持原速）。
+  - **音画同步**：交付前在开头、中段、结尾各测一处声音偏移，要小于 10 ms。
 - 抽帧检查一定看过渡的中间帧和零间隔衔接处（上一条的尾巴会盖住下一条）。
 
 ### 7. 封面 + 首帧（默认做，不用问）
@@ -92,6 +106,14 @@ download_results 拿链接 → 整理成 `urls.txt`（每行 `<taskId>.<ext> <ur
 - references/packaging-playbook.md：头部博主实测结论（节奏、开场公式、字幕、声音、号召、红线），完整报告在 references/research/
 - references/packaging-presets.json：五种风格各自的默认包装
 - references/huazi.md：花字模板 edit.json 字段、九种卡片、三档强度、写法习惯
+- references/lin-style.md：A 小林式的画面语法、13 种场景、流水线、B-roll 提示词、音效档位、踩过的坑
+- scripts：
+  - lin_scenes.py：plan.json 转 scenes.json，自动量脸
+  - lin_subs.py：字幕
+  - lin_sfx.py：earshot 音效
+  - lin_mix.py：混音、变速导出
+  - misread_check.py：查念错
+  - patch_words.py：只换念错的句子，保住口型
 - persona.json：白背心数字人 + 其他主播（用户本人、橘猫店长、柴犬主播）、提示词模板、动作库、多语言实测
 - references/voice.md：换声音（MiMo 克隆 / 音色设计）
 - references/new-avatar.md：从一张照片做新形象

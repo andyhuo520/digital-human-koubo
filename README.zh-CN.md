@@ -112,7 +112,7 @@ cd digital-human-koubo
 
 ### 2 · 把两个 Skill 装进你的 Agent
 
-仓库里有两个 Skill：`digital-human-koubo`（主 Skill）和 `finance-explainer`（风格 A「财经 / 科技解说」的引擎）。
+仓库里有两个 Skill：`digital-human-koubo`（主 Skill）和 `finance-explainer`（纯图表、不出镜的财经长片引擎，可选；风格 A 默认用主 Skill 里的 `templates/lin-169`）。
 
 **Claude Code**
 ```bash
@@ -225,7 +225,7 @@ python3 ~/.claude/skills/digital-human-koubo/scripts/make_assets.py
 
 | 风格 | 比例 | 时长 | 适合 | 模板 |
 |---|---|---|---|---|
-| **A** 小林式解说（财经 / 科技事件） | 16:9 | 3–20 分钟 | 事件、数据、「为什么」 | `finance-explainer` 引擎 |
+| **A** 小林式解说（财经 / 科技事件） | 16:9 | 3–20 分钟 | 事件、数据、「为什么」 | `templates/lin-169`（plan.json 驱动：景深字、题板+主播小窗、B-roll、公式逐项长出、算例、图表） |
 | **B** 网红花字口播 | 9:16 | 30–120 秒 | 安利、带货、种草、吐槽 | `templates/huazi-916`（数据驱动） |
 | **C** 发布解读 | 16:9 | 30–90 秒 | 新品、新模型发布 | `templates/reference/launch-169` |
 | **D** 保姆级教程 | 16:9 | 3–8 分钟 | 几步做出 XX、工具上手 | `templates/reference/tutorial-169` |
@@ -306,12 +306,15 @@ skills/
     scripts/                      build_tasks · rangedl · assemble · align · check_edit · cutout_video
                                   voicefx/unify · doctor · new_edit · make_assets
                                   make_cover · cover_first（封面 + 首帧）
+                                  lin_scenes · lin_subs · lin_sfx · lin_mix（风格 A 分镜、字幕、音效、混音）
+                                  misread_check · patch_words（查念错字、只换错句保口型）
     templates/
       huazi-916/                  9:16 数据驱动花字口播模板（edit.json）
       packaging/                  48 个组件 + 图鉴工程
+      lin-169/                    16:9 小林式解说模板（scenes.json 驱动，13 种场景）
       reference/                  launch-169 · tutorial-169 · multihost-169
     assets/                       风格预览图 · 包装图鉴 · 数字人参考图
-  finance-explainer/              风格 A 引擎（episode.json 拍表、检索工具）
+  finance-explainer/              纯图表财经长片引擎（episode.json 拍表、检索工具）
 docs/                             README 用的图片、GIF 预览、封面帧
 ```
 
@@ -323,6 +326,8 @@ docs/                             README 用的图片、GIF 预览、封面帧
 - Grok 9:16 720p 是 **720×1280**，别拉成别的比例。
 - expo 缓动到不了终点（99.9 四舍五入成 100）→ 计数动画结束时强制落在精确值。
 - 主播视频轨一定要静音；两条声音差几毫秒叠在一起会刺耳（梳状滤波）。
+- 几十段口播直接拼接，声音会一段段累积落后口型（实测 44 段到 4:43 晚 0.38 秒）→ `assemble.py` 拼接前把每段音频补齐到画面长度，并校验音画等长。
+- whisper 带原文提示会把念错的字「纠正」回去 → `misread_check.py` 按停顿切句、不带原文转写；念错的用 `patch_words.py` 只换那一句（克隆音拉到原句长度），口型不受影响，不用整片换音色。
 
 ## 使用红线
 

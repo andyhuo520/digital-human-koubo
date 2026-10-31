@@ -112,7 +112,7 @@ cd digital-human-koubo
 
 ### 2 · Install the two skills into your agent
 
-The repo contains two skills: `digital-human-koubo` (main) and `finance-explainer` (the engine for Style A, the finance / tech explainer).
+The repo contains two skills: `digital-human-koubo` (main) and `finance-explainer` (an optional engine for chart-only finance long-forms; Style A now uses `templates/lin-169` in the main skill).
 
 **Claude Code**
 ```bash
@@ -225,7 +225,7 @@ Details: [`references/new-avatar.md`](skills/digital-human-koubo/references/new-
 
 | Style | Ratio | Length | Best for | Template |
 |---|---|---|---|---|
-| **A** Finance / tech explainer (Xiaolin-style structure) | 16:9 | 3–20 min | events, data, "why…" | `finance-explainer` engine |
+| **A** Finance / tech explainer (Xiaolin-style structure) | 16:9 | 3–20 min | events, data, "why…" | `templates/lin-169` (plan.json-driven: text behind presenter, boards + presenter PiP, B-roll, formulas built term by term, worked examples, charts) |
 | **B** Influencer talking head with animated captions | 9:16 | 30–120 s | product picks, sales, opinions | `templates/huazi-916` (data-driven) |
 | **C** Launch breakdown | 16:9 | 30–90 s | new products / models | `templates/reference/launch-169` |
 | **D** Step-by-step tutorial | 16:9 | 3–8 min | "how to…", tool setup | `templates/reference/tutorial-169` |
@@ -306,12 +306,15 @@ skills/
     scripts/                      build_tasks · rangedl · assemble · align · check_edit · cutout_video
                                   voicefx/unify · doctor · new_edit · make_assets
                                   make_cover · cover_first (cover + first frame)
+                                  lin_scenes · lin_subs · lin_sfx · lin_mix (Style A scenes, subtitles, SFX, mix)
+                                  misread_check · patch_words (find mispronunciations, patch one clause, keep lip sync)
     templates/
       huazi-916/                  9:16 data-driven talking-head template (edit.json)
       packaging/                  48-component kit + gallery project
+      lin-169/                    16:9 Xiaolin-style explainer template (scenes.json-driven, 13 scene types)
       reference/                  launch-169 · tutorial-169 · multihost-169
     assets/                       style previews · packaging gallery · avatar reference
-  finance-explainer/              Style A engine (episode.json beat sheet, research helpers)
+  finance-explainer/              chart-only finance long-form engine (episode.json beat sheet, research helpers)
 docs/                             README images, GIF previews, posters
 ```
 
@@ -323,6 +326,8 @@ docs/                             README images, GIF previews, posters
 - Grok 9:16 720p is **720×1280** — never stretch it to another ratio.
 - Expo easing never quite reaches the target (99.9 → rounds to 100) → counters snap to the exact value at the end.
 - Always mute the presenter video track; doubled audio a few ms apart sounds harsh (comb filtering).
+- Concatenating dozens of clips makes the voice drift behind the lips (measured: 0.38 s late by 4:43 over 44 clips) → `assemble.py` pads every clip's audio to its video length and checks audio/video durations match.
+- whisper with the script as prompt "corrects" mispronounced words → `misread_check.py` transcribes pause-split clauses without the script; `patch_words.py` replaces just that clause with a voice-clone take stretched to the original length, so lip sync stays intact (don't re-voice the whole film).
 
 ## Responsible use
 
