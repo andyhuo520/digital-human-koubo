@@ -44,6 +44,7 @@ const VERT: Record<string, Record<string, any>> = {
 };
 export type PackItem = { use: string; [k: string]: any };
 const walk = (v: any, T: (r: any) => number, key = ""): any => {
+  if (key === "stepAt" && Array.isArray(v)) return v.map((x) => (typeof x === "string" || typeof x === "number" ? T(x) : x));   // 步骤时刻也能写 "段:词"
   if (Array.isArray(v)) return v.map((x) => walk(x, T));
   if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x, T, k)]));
   if ((key === "at" || key === "until") && (typeof v === "string" || typeof v === "number")) return T(v);

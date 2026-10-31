@@ -41,7 +41,7 @@ description: 用固定的数字人形象（白背心数字人 / 用户本人数�
 | E 多主播多语言 | 16:9 | 3–7 分钟 | 参考实现 `templates/reference/multihost-169` |
 
 ### 1. 写稿 → script.json
-按选定风格的稿子写法（style-menu.md 里每种都有）。每段一句或两句，10 秒左右（约 40–55 字，Grok 中文约 5.4 字/秒），标 `shot`：`full`（全屏出镜）/ `pip`（画中画讲解）/ `vlog`（随意自拍口吻）/ `depth`（要做「文字在人身后」的段：中景、头顶两侧留背景）。英文缩写、网址写成好念的样子。外语段直接写目标语言的台词。
+按选定风格的稿子写法（style-menu.md 里每种都有）。每段一句或两句，10 秒左右（约 40–55 字，Grok 中文约 5.4 字/秒），标 `shot`：`full`（全屏出镜）/ `pip`（画中画讲解）/ `vlog`（随意自拍口吻）/ `depth`（要做「文字在人身后」的段：中景、头顶两侧留背景）。英文缩写、网址写成好念的样子；字幕要显示原写法时在那段加 `"sub": {"SKILL 点 M D": "SKILL.md"}`（align.py 按念法对齐、字幕换回写法）。外语段直接写目标语言的台词。
 
 ### 2. 切段 + 报价
 `python3 scripts/build_tasks.py script.json tasks.json --purpose "teaching a beginner tutorial step by step"`

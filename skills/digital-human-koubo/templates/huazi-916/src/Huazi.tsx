@@ -323,7 +323,7 @@ const Showcase: React.FC<{ s: (typeof SHOWS)[number] }> = ({ s }) => {
           </AbsoluteFill>
         );
       })}
-      {s.note && <div style={{ position: "absolute", left: 40, top: 1010, fontFamily: ZH, fontSize: 24, color: "rgba(255,255,255,.6)" }}>{s.note}</div>}
+      {s.note && <div style={{ position: "absolute", left: 40, top: 398 + (({ "9:16": 1200, "1:1": 900 } as Record<string, number>)[s.items[0]?.ratio ?? ""] ?? 608), fontFamily: ZH, fontSize: 24, color: "rgba(255,255,255,.6)" }}>{s.note}</div>}
     </AbsoluteFill>
   );
 };
