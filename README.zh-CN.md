@@ -57,6 +57,7 @@
 - **按内容推荐剪辑风格**：Agent 先诊断内容，推荐 2 种风格并附预览图，一次问完（风格 · 比例时长 · 花字强度 · 主播）。
 - **48 个包装组件**：逐帧拆了 25 支头部博主视频（MrBeast、Mark Rober、Ryan Trahan、MKBHD、影视飓风、何同学、Johnny Harris、Vox、Kurzgesagt、回形针、半佛仙人、差评、毕导）。每种风格自带默认包装，想加减直接说。
 - **景深字**：大字 / 数字放在背景和人之间（macOS Vision 人像分割 → 透明视频 → 三层合成）。
+- **封面即首帧**：每条片子默认出封面（16:9 / 9:16 / 3:4：主播帧 + 钩子大字 + 证据卡），并接成成片第一帧停 0.5 秒。平台默认拿首帧当封面，不用再单独上传。
 - **多语言**：英、日、韩、法、西、阿拉伯语实测，whisper 回听准确率 94–100%。
 - **多种 Agent 都能用**：标准 `SKILL.md` Agent Skill + 脚本，只要能装 Skill、能接远程 MCP、能在本机跑命令，就能驱动整条流程。
 
@@ -72,6 +73,7 @@
               6. 逐字时间轴（tl.json）
               7. Remotion 剪辑：风格模板 + 默认包装（+ 你点名的手法）
               8. 渲染 → 看过渡中间帧 → 响度（-14 / -16 LUFS）
+              9. 封面：挑主播帧 → 16:9 / 9:16 / 3:4 → 接成首帧（停 0.5 秒）
 ```
 
 <p align="center"><img src="docs/images/ad-breakdown.jpg" width="820" alt="直播间广告 5 段，每段用的包装"></p>
@@ -145,6 +147,7 @@ cd skills && zip -r ../digital-human-skills.zip digital-human-koubo finance-expl
 |---|---|---|---|
 | ffmpeg | `brew install ffmpeg` | `winget install Gyan.FFmpeg` | `sudo apt install ffmpeg` |
 | Python 3 + numpy + Pillow | `brew install python` 后 `python3 -m pip install numpy pillow` | `winget install Python.Python.3.12` | `sudo apt install python3-pip` |
+| Playwright + Chromium（封面排版） | `python3 -m pip install playwright && python3 -m playwright install chromium` | 同左 | 同左 |
 | Node.js 18+（Remotion） | `brew install node` | `winget install OpenJS.NodeJS.LTS` | `nvm install --lts` |
 | whisper.cpp（`whisper-cli`） | `brew install whisper-cpp` | [Releases 下载](https://github.com/ggerganov/whisper.cpp/releases) | [源码编译](https://github.com/ggerganov/whisper.cpp) |
 | whisper 模型 | 下载 [`ggml-medium-q5_0.bin`](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium-q5_0.bin) 放到 `~/models/`（或 `export WHISPER_MODEL=模型路径`） | 同左 | 同左 |
@@ -302,6 +305,7 @@ skills/
     references/                   风格菜单 · 包装组件 · 手法库 · 安装 · 拆解报告
     scripts/                      build_tasks · rangedl · assemble · align · check_edit · cutout_video
                                   voicefx/unify · doctor · new_edit · make_assets
+                                  make_cover · cover_first（封面 + 首帧）
     templates/
       huazi-916/                  9:16 数据驱动花字口播模板（edit.json）
       packaging/                  48 个组件 + 图鉴工程

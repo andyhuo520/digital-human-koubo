@@ -57,6 +57,7 @@ Click a GIF (or "Watch") to play the full video. Every demo below was produced w
 - **5 editing styles, chosen for your content** — the agent diagnoses your content, recommends 2 styles with preview images and asks you everything in one go (style · ratio & length · caption intensity · presenter).
 - **48 packaging components** — measured frame-by-frame from 25 videos by top creators (MrBeast, Mark Rober, Ryan Trahan, MKBHD, MediaStorm/影视飓风, 何同学, Johnny Harris, Vox, Kurzgesagt, 回形针, 半佛仙人, 差评, 毕导). Each style has a default packaging recipe; add or remove techniques by just asking.
 - **Text behind the presenter** — big words / numbers between the background and the person (macOS Vision person segmentation → transparent video → 3-layer composite).
+- **Cover as the first frame** — every video gets a cover by default (16:9 / 9:16 / 3:4: presenter frame + hook headline + evidence cards), spliced in as the first 0.5 s. Platforms use the first frame as the thumbnail, so there is nothing to upload separately.
 - **Multi-language** — English, Japanese, Korean, French, Spanish, Arabic tested (whisper back-check 94–100 %).
 - **Works with your agent** — a standard `SKILL.md` Agent Skill plus scripts; any agent that can load skills, connect a remote MCP server and run local commands can drive it.
 
@@ -72,6 +73,7 @@ your content ──► 0. setup check (Renoise MCP / ffmpeg / whisper — skip w
                  6. word-level timeline (tl.json)
                  7. edit in Remotion: style template + default packaging (+ your requests)
                  8. render → check mid-transition frames → loudness (-14 / -16 LUFS)
+                 9. cover: pick a presenter frame → 16:9 / 9:16 / 3:4 → splice in as the first frame (0.5 s)
 ```
 
 <p align="center"><img src="docs/images/ad-breakdown.jpg" width="820" alt="The 5 segments of the livestream ad and the packaging used in each"></p>
@@ -145,6 +147,7 @@ Latest official instructions: **[renoise.ai/plugin](https://renoise.ai/plugin)**
 |---|---|---|---|
 | ffmpeg | `brew install ffmpeg` | `winget install Gyan.FFmpeg` | `sudo apt install ffmpeg` |
 | Python 3 + numpy + Pillow | `brew install python` then `python3 -m pip install numpy pillow` | `winget install Python.Python.3.12` | `sudo apt install python3-pip` |
+| Playwright + Chromium (cover layout) | `python3 -m pip install playwright && python3 -m playwright install chromium` | same | same |
 | Node.js 18+ (Remotion) | `brew install node` | `winget install OpenJS.NodeJS.LTS` | `nvm install --lts` |
 | whisper.cpp (`whisper-cli`) | `brew install whisper-cpp` | [Releases](https://github.com/ggerganov/whisper.cpp/releases) | build from [source](https://github.com/ggerganov/whisper.cpp) |
 | whisper model | [`ggml-medium-q5_0.bin`](https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium-q5_0.bin) → `~/models/` (or `export WHISPER_MODEL=/path/to/model.bin`) | same | same |
@@ -302,6 +305,7 @@ skills/
     references/                   style menu · packaging · playbook · install · research reports
     scripts/                      build_tasks · rangedl · assemble · align · check_edit · cutout_video
                                   voicefx/unify · doctor · new_edit · make_assets
+                                  make_cover · cover_first (cover + first frame)
     templates/
       huazi-916/                  9:16 data-driven talking-head template (edit.json)
       packaging/                  48-component kit + gallery project

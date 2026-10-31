@@ -1,6 +1,6 @@
 ---
 name: digital-human-koubo
-description: 用固定的数字人形象（白背心数字人 / 用户本人数字人 / 猫狗角色）做口播视频，先按内容推荐剪辑风格让用户选（小林式解说 / 网红花字口播 / 发布解读 / 保姆级教程 / 多主播多语言），自动套上从 MrBeast、MKBHD、影视飓风、Johnny Harris、Vox、半佛、差评等头部博主拆出来的 48 个包装组件（开场钩子、数字钉子、文字在人身后的景深字、证据截图、地图路线、弹幕、投票、复盘板…），再写稿 → 按 15 秒切段 → Renoise Grok Video 1.5 分段生成（先报价、用户确认才生成）→ 分片下载校验 → 逐段回听 → 对齐 → Remotion 剪辑出片。触发：用我的数字人讲这段、数字人口播、让白背心数字人说、用数字人 Skill、数字人带货 / 解读 / 教程 / 种草视频、做成小林说那样、加花字、加包装 / 加地图 / 加弹幕 / 开场加预告 / 文字放在人身后、做成 MrBeast 那种节奏、有哪些包装手法。不用于：换一个全新形象（先按 references/new-avatar.md 做形象）、冒充真人。
+description: 用固定的数字人形象（白背心数字人 / 用户本人数字人 / 猫狗角色）做口播视频，先按内容推荐剪辑风格让用户选（小林式解说 / 网红花字口播 / 发布解读 / 保姆级教程 / 多主播多语言），自动套上从 MrBeast、MKBHD、影视飓风、Johnny Harris、Vox、半佛、差评等头部博主拆出来的 48 个包装组件（开场钩子、数字钉子、文字在人身后的景深字、证据截图、地图路线、弹幕、投票、复盘板…），再写稿 → 按 15 秒切段 → Renoise Grok Video 1.5 分段生成（先报价、用户确认才生成）→ 分片下载校验 → 逐段回听 → 对齐 → Remotion 剪辑出片 → 默认做封面（16:9 / 9:16 / 3:4）并接成成片首帧。触发：用我的数字人讲这段、数字人口播、让白背心数字人说、用数字人 Skill、数字人带货 / 解读 / 教程 / 种草视频、做成小林说那样、加花字、加包装 / 加地图 / 加弹幕 / 开场加预告 / 文字放在人身后、做成 MrBeast 那种节奏、有哪些包装手法。不用于：换一个全新形象（先按 references/new-avatar.md 做形象）、冒充真人。
 ---
 
 # 数字人口播
@@ -45,7 +45,7 @@ description: 用固定的数字人形象（白背心数字人 / 用户本人数�
 
 ### 2. 切段 + 报价
 `python3 scripts/build_tasks.py script.json tasks.json --purpose "teaching a beginner tutorial step by step"`
-→ 打印段数、秒数、预估 credits。full 段 720p（17/秒），pip 段 480p（10/秒）。拿 `estimate_cost` 核一次，报给用户等确认。用户本人或动物主播用 persona.json → other_hosts 里的提示词模板。
+→ 打印段数、秒数、预估 credits。full 段 720p（17/秒），pip 段 480p（10/秒）。**主播要裁成半身 / 放大显示、或者 pip 段的主播卡并不小时，所有出镜段一律 720p（`--all-720p`）**：480p 原片只有 400×736，裁半身再铺满大卡会放大 2 倍以上，明显发糊（vibe-knowledge 介绍片因此重拍 4 段，多花 680 积分）。拿 `estimate_cost` 核一次，报给用户等确认。用户本人或动物主播用 persona.json → other_hosts 里的提示词模板。
 
 ### 3. 生成
 tasks.json 每 10 个一批 create_tasks → wait_tasks。要进场景（直播间、门店、街景）时先用 GPT Image 2.5 合成开场画面（人物参考图 + 场景描述，2k 约 23 积分），再把这张图当 Grok 的参考图。
@@ -58,6 +58,8 @@ download_results 拿链接 → 整理成 `urls.txt`（每行 `<taskId>.<ext> <ur
 - whisper `--prompt 原文` 会让个别段漏掉前半句，用中性提示「以下是普通话的句子。」。外语段按语言转写；日韩阿拉伯语不要加 `-ml 1`（会把多字节字符截断成乱码）。
 - **每段抽 4 帧看一眼**：Grok 横屏口播偶尔自己烧字幕（提示词写了也挡不住），有就重拍那段。
 - Grok 有时漏念开头的语气词：没影响意思就按实际口播改字幕，别为这个重拍。
+- **念错字（不是漏语气词）要当场修，不能交给用户去听**：先用中性提示和带原文提示各转写一次，排除 whisper 误听。确认真念错了，优先 0 积分修：拿同一角色 15–20 秒干声（拼几段 cut/*.wav）当参照，用 MiMo `mimo-v2.5-tts-voiceclone` 只重配错的那几个字，响度对齐后在停顿处接缝替换（不要加速、不要加混响，否则字会糊），替换后再转写确认。口型差太多时再报价重拍那一段。
+- 开头第一个字最容易被吞或念歪（例：「一个知识点」→「几个知识地点」），写稿时第一段开头别放关键名词，或者先垫一个短词。
 
 ### 6. 对齐 + 剪辑
 `python3 scripts/align.py script.json --out <工程>/src/tl.json` 出逐字时间轴，然后按 brief.json 的风格剪：
@@ -67,6 +69,21 @@ download_results 拿链接 → 整理成 `urls.txt`（每行 `<taskId>.<ext> <ur
 - **包装（每种风格都做）**：按 `references/packaging-presets.json` 里这个风格的默认包装排——开场 30 秒按 open 顺序、正文保证 stimulus_every_s 秒内有一个新视觉事件、讲到 per_beat 里那类内容就用对应组件、recurring 全片挂着。组件写进 `pack` 数组（字段见 references/packaging.md），手法依据见 references/packaging-playbook.md。用户点名要的手法（「加地图」「开场加预告」「加弹幕」「换成 MrBeast 那种」）在默认基础上加减。用户问「有哪些包装」先发 `assets/packaging/图鉴.jpg`。景深字（文字在人身后）要先跑 `scripts/cutout_video.py` 抠像，见 references/packaging.md。
 - 声音：数字人视频轨一定 `muted`，人声单独铺一条；多段 Grok 原声用 `python3 scripts/voicefx/unify.py <输出目录> <片段…>` 统一频谱 + 同一个小房间混响（复用旧段时加 `--ref 旧片段目录`，场景/动物片段加 `--scene`）。BGM 压在人声下约 20 dB。
 - 抽帧检查一定看过渡的中间帧和零间隔衔接处（上一条的尾巴会盖住下一条）。
+
+### 7. 封面 + 首帧（默认做，不用问）
+平台默认拿视频第一帧当封面，所以每条片子都做封面，并把它接在成片最前面。交付的主文件就是带封面首帧的版本。
+1. 写 `cover.json`（字段见 references/cover.md）：
+   - 小字栏目名
+   - 钩子标题 ≤8 字
+   - 红色强调句 ≤6 字
+   - 一句副标题
+   - ≤3 个标签
+   - 链接或号召
+   - 主播帧
+   - ≤2 张证据卡（官方截图、作品）
+2. `python3 scripts/make_cover.py cover.json --candidates` 抽 12 帧拼成候选图。挑一帧笑着、眼睛睁开、没在说话或嘴型好看的，时间写进 `host.t`。
+3. `python3 scripts/make_cover.py cover.json` 生成 `cover/cover_16x9.jpg`（横屏），按 ratios 还会出 `cover_9x16.jpg`（竖屏）和 `cover_3x4.jpg`（小红书）。看一眼 `thumb_*.jpg`，540px 宽时标题要读得清，文字不能压到卡片。
+4. `python3 scripts/cover_first.py 成片.mp4 cover/cover_<比例>.jpg 交付.mp4`：封面停 0.5 秒后硬切进正片，声音整体后推 0.5 秒。抽 0 秒、0.45 秒、0.55 秒三帧确认。不带封面的版本另存为 `_无封面.mp4`。
 
 ## 参考
 - references/install.md：Renoise MCP 和本机环境的多种装法（只在缺的时候用）
@@ -79,5 +96,6 @@ download_results 拿链接 → 整理成 `urls.txt`（每行 `<taskId>.<ext> <ur
 - references/voice.md：换声音（MiMo 克隆 / 音色设计）
 - references/new-avatar.md：从一张照片做新形象
 - references/edit-styles.md：各剪辑工程的入口文件和声音统一做法
+- references/cover.md：封面 cover.json 字段、三种比例的版式、首帧接法
 - assets/styles/：五种风格的预览图（给用户选的时候发）
 - assets/packaging/：包装组件图鉴（47 格总览 + 每个组件一张）

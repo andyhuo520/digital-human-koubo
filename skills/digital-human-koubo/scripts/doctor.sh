@@ -18,6 +18,8 @@ if [ -n "$PY" ]; then
   for m in numpy:numpy PIL:pillow; do mod=${m%%:*}; pkg=${m#*:}
     $PY -c "import $mod" 2>/dev/null && ok "$pkg" || need "$pkg" "声音统一 / 预览图" "$PY -m pip install $pkg" "$PY -m pip install $pkg" "$PY -m pip install $pkg" "conda install $pkg"
   done
+  PWI="$PY -m pip install playwright && $PY -m playwright install chromium"
+  $PY -c "import playwright" 2>/dev/null && ok "playwright" || need "playwright + chromium" "封面排版截图（make_cover.py）" "$PWI" "$PWI" "$PWI" "$PWI"
 else need "Python 3" "回听、对齐、声音统一脚本" "brew install python" "winget install Python.Python.3.12" "sudo apt install python3 python3-pip" "python.org 下载，或装 Anaconda / Miniconda"; fi
 if command -v node >/dev/null; then
   v=$(node -v | tr -d v | cut -d. -f1); [ "$v" -ge 18 ] && ok "Node $(node -v)" || need "Node 18 以上（现在是 $(node -v)）" "Remotion 剪辑" "brew upgrade node" "winget upgrade OpenJS.NodeJS.LTS" "nvm install --lts" "nodejs.org 下载 LTS"
