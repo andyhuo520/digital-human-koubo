@@ -3,7 +3,30 @@ from PIL import Image,ImageDraw,ImageFont
 src,out,start,dur,step=sys.argv[1],sys.argv[2],float(sys.argv[3]),float(sys.argv[4]),float(sys.argv[5])
 cols=int(sys.argv[6]) if len(sys.argv)>6 else 6
 os.makedirs(out,exist_ok=True)
-font=ImageFont.truetype('/System/Library/Fonts/Menlo.ttc',16)
+def load_font(size=16):
+    candidates = [
+        "/System/Library/Fonts/Menlo.ttc",
+        "/System/Library/Fonts/Supplemental/Courier New.ttf",
+        "C:/Windows/Fonts/consola.ttf",
+        "C:/Windows/Fonts/Consolas.ttf",
+        "C:/Windows/Fonts/cour.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+        "/usr/share/fonts/truetype/liberation2/LiberationMono-Regular.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
+    ]
+
+    for path in candidates:
+        if not os.path.isfile(path):
+            continue
+        try:
+            return ImageFont.truetype(path, size)
+        except OSError:
+            continue
+
+    return ImageFont.load_default()
+
+
+font = load_font(16)
 frames=[];t=start
 while t<start+dur:
     p=f'{out}/_f.jpg'
