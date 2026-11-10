@@ -51,7 +51,9 @@ description: 用固定的数字人形象（白背心数字人 / 用户本人数�
 tasks.json 每 10 个一批 create_tasks → wait_tasks。要进场景（直播间、门店、街景）时先用 GPT Image 2.5 合成开场画面（人物参考图 + 场景描述，2k 约 23 积分），再把这张图当 Grok 的参考图。
 
 ### 4. 下载（Renoise 美国 CDN 很慢，必须这样下）
-download_results 拿链接 → 整理成 `urls.txt`（每行 `<taskId>.<ext> <url>`）→ `python3 scripts/rangedl.py`：每个文件 6 段 Range 并发、断点续传、下完 ffmpeg 解码校验。
+download_results 拿链接 → 整理成 `urls.txt`（每行 `<taskId>.<ext> <url>`，taskId 不得重复）→ `python3 scripts/rangedl.py`：每个文件最多 6 段 Range 并发、下完 ffmpeg 解码校验。
+- 服务端须支持 Range，返回匹配的 `206` / `Content-Range`；不支持 Range、HTTP 错误、重试耗尽或解码失败都会以非零状态退出，不覆盖已有成片。先检查 / 更新链接，再重跑。
+- 只续传本次运行中校验过的中断分片；失败时保留已验证分片供排查，重新运行仍会重新下载。
 
 ### 5. 回听 + 抽帧 + 拼接
 `python3 scripts/assemble.py script.json ids.json --out 成片_完整版.mp4`（ids.json = {段 id: taskId}）：whisper 逐段转写比对文稿、只保留到说完后 0.25 秒、拼接、loudnorm -16。剪辑用 `cut/joined.mov`：拼接前已把每段音频补齐到和画面等长，避免几十段拼下来声音累积落后口型；拼完会打印画面和声音的时长，两者必须一致。改过某段后用 `--rejoin` 只重新拼。
