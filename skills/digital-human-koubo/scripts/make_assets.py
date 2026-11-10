@@ -10,7 +10,7 @@ Replace music/bgm.mp3 with any track you have the rights to (e.g. Mixkit / YouTu
 想换更好的配乐：把有授权的曲子放到 public/music/bgm.mp3 覆盖即可。
 Requires: numpy, ffmpeg (for the mp3).
 """
-import subprocess, sys, wave
+import subprocess, sys, tempfile, wave
 from pathlib import Path
 import numpy as np
 
@@ -104,8 +104,9 @@ def fill(pub: Path, S, music_wav: Path):
 if __name__ == "__main__":
     skill = Path(__file__).resolve().parent.parent
     S = sfx()
-    tmp = Path("/tmp/_dh_bgm.wav"); write_wav(tmp, bgm())
     targets = [Path(a) for a in sys.argv[1:]] or [p.parent for p in list(skill.glob("templates/**/package.json")) + list((skill.parent / "finance-explainer").glob("templates/**/package.json")) if "node_modules" not in p.parts]
-    for tdir in targets:
-        fill(tdir if tdir.name == "public" else tdir / "public", S, tmp)
-    tmp.unlink(missing_ok=True)
+    with tempfile.TemporaryDirectory(prefix="dh-bgm-") as temp_dir:
+        tmp = Path(temp_dir) / "bgm.wav"
+        write_wav(tmp, bgm())
+        for tdir in targets:
+            fill(tdir if tdir.name == "public" else tdir / "public", S, tmp)
