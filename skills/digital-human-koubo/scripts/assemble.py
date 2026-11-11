@@ -4,10 +4,11 @@
 - script.json：[{"id","t",...}]（和 build_tasks.py 同一份）；ids.json：{"s1": 363509, ...}（段 id → Renoise taskId）；下载的文件在 gen/renoise-<taskId>.mp4
 - 每段：whisper 转写（中性提示，不用 --prompt 原文，免得漏前半句）→ 和文稿比准确率 → 只保留到说完后 0.25 秒
 - 输出 cut/<id>.mp4（30fps、48k 立体声）、cut/<id>.json（逐字时间，align.py 用）、cut/qa.json、拼接好的 --out（-16 LUFS）
+- 转写失败、没有生成新 JSON 或没有语音时停止，不复用旧转写结果剪片
 - 准确率 < 85% 的段打 ⚠，先人工听；真念错就单独重拍那段
 - 念错字另用 misread_check.py（不带原文提示逐句转写）查，用 patch_words.py 只换错句；改完 --rejoin 只重新拼接
 - 拼接前每段音频补齐/裁到和画面完全等长（PCM .mov 中转），否则几十段拼下来声音会累积落后口型（2026-10 实测 44 段到 4:43 晚 0.38 秒）"""
-import json, subprocess, difflib, re, os, sys
+import json, subprocess, difflib, re, os, sys, tempfile
 from pathlib import Path
 a = sys.argv[1:]
 if len(a) < 2: sys.exit(__doc__)
@@ -22,18 +23,27 @@ for s in ([] if REJOIN else S):
     sid = s['id']; src = f"gen/renoise-{IDS[sid]}.mp4"; wav = f'cut/{sid}.wav'
     lg = s.get('lang_code', lang)
     subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', src, '-ar', '16000', '-ac', '1', wav], check=True)
-    cmd = ['whisper-cli', '-m', WM, '-l', lg] + (['--prompt', '以下是普通话的句子。', '-ml', '1'] if lg == 'zh' else []) + ['-oj', '-of', f'cut/{sid}', '-f', wav]
-    subprocess.run(cmd, capture_output=True)
-    d = [t for t in json.load(open(f'cut/{sid}.json', errors='replace'))['transcription'] if t['text'].strip() and not t['text'].strip().startswith('[')]
-    heard = ''.join(t['text'] for t in d)
-    st = min(t['offsets']['from'] for t in d) / 1000 if d else 0; en = max(t['offsets']['to'] for t in d) / 1000 if d else 0
-    dur = float(subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', src], capture_output=True, text=True).stdout)
-    w, h = map(int, subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'v', '-show_entries', 'stream=width,height', '-of', 'csv=p=0', src], capture_output=True, text=True).stdout.split(','))
-    sz = size or f'{w - w % 2}x{h - h % 2}'          # 保持源尺寸（Grok 9:16 720p 是 720×1280，别拉成 720×1440）
-    acc = difflib.SequenceMatcher(None, clean(s['t']), clean(heard)).ratio()
-    keep = min(dur, en + 0.25)
-    subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', src, '-t', f'{keep:.3f}', '-vf', f'scale={sz.replace("x", ":")}:flags=lanczos,fps=30,format=yuv420p',
-                    '-af', f'aresample=48000,afade=t=out:st={max(0, keep - 0.12):.3f}:d=0.12', '-ac', '2', '-c:v', 'libx264', '-crf', '17', '-preset', 'medium', '-c:a', 'aac', '-b:a', '192k', f'cut/{sid}.mp4'], check=True)
+    with tempfile.TemporaryDirectory(prefix='whisper-', dir='cut') as temp_dir:
+        transcript_path = Path(temp_dir) / 'transcript.json'
+        cmd = ['whisper-cli', '-m', WM, '-l', lg] + (['--prompt', '以下是普通话的句子。', '-ml', '1'] if lg == 'zh' else []) + ['-oj', '-of', str(transcript_path.with_suffix('')), '-f', wav]
+        try:
+            subprocess.run(cmd, capture_output=True, check=True)
+        except subprocess.CalledProcessError as exc:
+            sys.exit(f"{sid}: whisper-cli failed ({exc.returncode}): {(exc.stderr or b'').decode(errors='replace').strip()}")
+        with transcript_path.open(encoding='utf-8', errors='replace') as transcript:
+            d = [t for t in json.load(transcript)['transcription'] if t['text'].strip() and not t['text'].strip().startswith('[')]
+        if not d:
+            sys.exit(f'{sid}: no transcribed speech; refusing to trim the clip')
+        heard = ''.join(t['text'] for t in d)
+        st = min(t['offsets']['from'] for t in d) / 1000; en = max(t['offsets']['to'] for t in d) / 1000
+        dur = float(subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', src], capture_output=True, text=True).stdout)
+        w, h = map(int, subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'v', '-show_entries', 'stream=width,height', '-of', 'csv=p=0', src], capture_output=True, text=True).stdout.split(','))
+        sz = size or f'{w - w % 2}x{h - h % 2}'          # 保持源尺寸（Grok 9:16 720p 是 720×1280，别拉成 720×1440）
+        acc = difflib.SequenceMatcher(None, clean(s['t']), clean(heard)).ratio()
+        keep = min(dur, en + 0.25)
+        subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', src, '-t', f'{keep:.3f}', '-vf', f'scale={sz.replace("x", ":")}:flags=lanczos,fps=30,format=yuv420p',
+                        '-af', f'aresample=48000,afade=t=out:st={max(0, keep - 0.12):.3f}:d=0.12', '-ac', '2', '-c:v', 'libx264', '-crf', '17', '-preset', 'medium', '-c:a', 'aac', '-b:a', '192k', f'cut/{sid}.mp4'], check=True)
+        os.replace(transcript_path, f'cut/{sid}.json')
     rep.append(dict(id=sid, acc=round(acc, 3), speech=[round(st, 2), round(en, 2)], keep=round(keep, 2), src_dur=round(dur, 2), heard=heard))
     print(f"{'⚠' if acc < 0.85 else ' '}{sid:5s} 准确率 {acc:.0%}  说话 {st:.2f}–{en:.2f}s  保留 {keep:.2f}/{dur:.2f}s  听到：{heard}")
 if REJOIN: rep = json.load(open('cut/qa.json'))
